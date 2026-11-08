@@ -7,7 +7,11 @@ authors = [
     { name = "Radosław Jasiewicz", email = "114445740+OptiNobles@users.noreply.github.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "httpx>=0.28.1",
+    "pydantic>=2.14.3",
+    "pydantic-settings>=2.16.2",
+]
 
 [build-system]
 requires = ["uv_build>=0.11.3,<0.12.0"]
