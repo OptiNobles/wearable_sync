@@ -1,0 +1,48 @@
+[
+  {
+    "id": "EXAMPLE_RUN_1",
+    "upload_time": "2026-11-02T08:10:00Z",
+    "polar_user": "https://www.polaraccesslink.com/v3/users/00000000",
+    "device": "Polar Ignite 3",
+    "device_id": "FAKEDEVICE",
+    "start_time": "2026-11-02T07:02:18",
+    "start_time_utc_offset": 60,
+    "duration": "PT3771.649S",
+    "calories": 782,
+    "distance": 9942.0,
+    "heart_rate": { "average": 139, "maximum": 165 },
+    "training_load_pro": [],
+    "sport": "RUNNING",
+    "has_route": true,
+    "detailed_sport_info": "RUNNING",
+    "running_index": 55,
+    "heart_rate_zones": [
+      { "index": 0, "lower_limit": 96, "upper_limit": 115, "in_zone": "PT120S" },
+      { "index": 1, "lower_limit": 115, "upper_limit": 134, "in_zone": "PT900S" }
+    ],
+    "samples": [
+      { "recording_rate": 1, "sample_type": 0, "data": "120,121,123" }
+    ],
+    "route": [
+      { "latitude": 0.0, "longitude": 0.0, "time": "PT0S", "satellites": 10, "fix": 1 }
+    ]
+  },
+  {
+    "id": "EXAMPLE_OTHER_1",
+    "upload_time": "2026-10-20T19:00:00Z",
+    "polar_user": "https://www.polaraccesslink.com/v3/users/00000000",
+    "device": "Polar Ignite 3",
+    "device_id": "FAKEDEVICE",
+    "start_time": "2026-10-20T18:37:19",
+    "start_time_utc_offset": 120,
+    "duration": "PT4995.898S",
+    "calories": 513,
+    "heart_rate": { "average": 100, "maximum": 130 },
+    "training_load_pro": [],
+    "sport": "OTHER",
+    "has_route": false,
+    "detailed_sport_info": "OTHER_INDOOR",
+    "heart_rate_zones": [],
+    "samples": []
+  }
+]
