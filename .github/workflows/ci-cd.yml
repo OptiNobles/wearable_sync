@@ -37,9 +37,10 @@ jobs:
         with:
           persist-credentials: false
 
+      # No 'version' input: setup-uv installs [tool.uv] required-version from
+      # pyproject.toml, the same version the Docker build must use.
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.11.3"
           enable-cache: true
 
       # --locked fails if uv.lock is out of date with pyproject.toml; warnings fail
@@ -60,7 +61,16 @@ jobs:
       image: ${{ steps.image.outputs.image }}
     env:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      # Pull request builds are never pushed, so a local name is enough when the
+      # repository variable is unavailable (e.g. in runs triggered by Dependabot).
+      IMAGE_NAME: ${{ vars.CONTAINER_IMAGE != '' && vars.CONTAINER_IMAGE || 'wearable-sync' }}
     steps:
+      - name: Require the image name for publishing
+        if: env.PUBLISH == 'true' && env.CONTAINER_IMAGE == ''
+        run: |
+          echo "::error::Repository variable CONTAINER_IMAGE is not set (managed by cloud_infra, wearable_sync/github)."
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -80,7 +90,7 @@ jobs:
         with:
           context: .
           push: ${{ env.PUBLISH == 'true' }}
-          tags: ${{ env.CONTAINER_IMAGE }}:${{ github.sha }}
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
