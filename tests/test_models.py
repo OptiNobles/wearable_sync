@@ -29,8 +29,16 @@ def test_unsafe_record_id_is_rejected(record_id: str) -> None:
         make_record(record_id=record_id)
 
 
-@pytest.mark.parametrize("source", UNSAFE_IDENTIFIERS)
-def test_unsafe_source_is_rejected(source: str) -> None:
+@pytest.mark.parametrize("source", ["polar", "garmin", "polar_v2"])
+def test_valid_source_is_accepted(source: str) -> None:
+    assert make_record(source=source).source == source
+
+
+# A source becomes a Unity Catalog schema name: no dots, dashes or uppercase.
+@pytest.mark.parametrize(
+    "source", [*UNSAFE_IDENTIFIERS, "Polar", "my-source", "a.b", "1polar", "_polar"]
+)
+def test_invalid_source_is_rejected(source: str) -> None:
     with pytest.raises(ValidationError):
         make_record(source=source)
 

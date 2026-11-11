@@ -9,9 +9,11 @@ import sys
 from contextlib import ExitStack
 from datetime import date, timedelta
 
+import truststore
+
 from training_hub.config import Settings
 from training_hub.services.sync import sync
-from training_hub.sinks.local import LocalFileSink
+from training_hub.sinks.factory import build_sink
 from training_hub.sources.registry import build_sources
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,11 @@ def main() -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         stream=sys.stdout,
     )
+    # The SDK logs an INFO line per uploaded file; keep its warnings and errors only.
+    logging.getLogger("databricks.sdk").setLevel(logging.WARNING)
+    # Use the OS certificate store for every library (the Databricks SDK uses
+    # requests/certifi): needed behind antivirus HTTPS inspection, harmless elsewhere.
+    truststore.inject_into_ssl()
     try:
         return _run()
     except Exception:
@@ -35,9 +42,11 @@ def main() -> int:
 def _run() -> int:
     settings = Settings()
     since = date.today() - timedelta(days=settings.lookback_days)
-    sink = LocalFileSink(settings.local_sink_root)
+    sink = build_sink(settings)
 
-    logger.info("Sync started: sources=%s since=%s", settings.enabled_sources, since)
+    logger.info(
+        "Sync started: sources=%s sink=%s since=%s", settings.enabled_sources, settings.sink, since
+    )
     with ExitStack() as stack:
         sources = build_sources(settings.enabled_sources, settings, stack)
         report = sync(sources, sink, since)

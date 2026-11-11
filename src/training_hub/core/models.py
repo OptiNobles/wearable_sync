@@ -5,9 +5,14 @@ from typing import Annotated, Any
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
-# Used as path segments by sinks: must start with a letter or digit (rules out
+# Used as file names by sinks: must start with a letter or digit (rules out
 # "." and ".."), and may contain only letters, digits, ".", "_" and "-".
 SafeIdentifier = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")]
+
+# Used as Unity Catalog object names (catalog, schema, volume), e.g. a source
+# name becomes a schema. Lowercase only: Unity Catalog stores names in lowercase,
+# so "Polar" and "polar" would silently refer to the same schema.
+UnityCatalogName = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$")]
 
 
 class DataType(StrEnum):
@@ -25,7 +30,7 @@ class RawRecord(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    source: SafeIdentifier
+    source: UnityCatalogName
     data_type: DataType
     record_id: SafeIdentifier
     recorded_at: AwareDatetime

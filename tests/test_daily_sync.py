@@ -34,7 +34,9 @@ class FakeSource:
 def job_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
     """Run the job in an empty directory (no .env) with sink output in tmp_path."""
     monkeypatch.chdir(tmp_path)
-    for name in ("ENABLED_SOURCES", "LOOKBACK_DAYS", "POLAR_ACCESS_TOKEN"):
+    # main() patches ssl globally; keep the rest of the test session unaffected.
+    monkeypatch.setattr(daily_sync.truststore, "inject_into_ssl", lambda: None)
+    for name in ("ENABLED_SOURCES", "LOOKBACK_DAYS", "POLAR_ACCESS_TOKEN", "SINK"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("LOCAL_SINK_ROOT", str(tmp_path / "data"))
     yield tmp_path / "data"
