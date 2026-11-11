@@ -1,0 +1,162 @@
+# CI on every pull request; build and deploy on every push to main.
+#
+#   pull_request -> test + build (image is built, not pushed)
+#   push to main -> test -> build (push image to GHCR) -> deploy (update the Azure job)
+#
+# Third-party actions are pinned to commit SHAs (tags can be moved); the comment
+# next to each SHA is the release it corresponds to.
+
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Least privilege by default; jobs that need more ask for it explicitly.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Superseded PR runs are cancelled; deployments from main always run to the end.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Set by cloud_infra (wearable_sync/github); defined there once for build and deploy.
+  CONTAINER_IMAGE: ${{ vars.CONTAINER_IMAGE }}
+
+jobs:
+  # 'test' and 'build' are the required status checks of the repository ruleset.
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.3"
+          enable-cache: true
+
+      # --locked fails if uv.lock is out of date with pyproject.toml; warnings fail
+      # the run through filterwarnings in pyproject.toml.
+      - run: uv run --locked pytest -q
+
+  build:
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # Needed only for the push on main; permissions cannot depend on the event.
+      # On pull requests nothing logs in or pushes, and production deploys by
+      # digest, so an image pushed under any tag cannot reach it.
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    env:
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        if: env.PUBLISH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The commit SHA tag makes each image traceable to its source.
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ env.CONTAINER_IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Tags in a registry can be overwritten; the digest cannot. Production is
+      # pinned to exactly the image built and tested here.
+      - id: image
+        if: env.PUBLISH == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: echo "image=${CONTAINER_IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # Azure trusts GitHub OIDC tokens only for this environment, and the environment
+    # only accepts deployments from main (both configured in cloud_infra).
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # OIDC token for azure/login; no Azure secret is stored anywhere
+    env:
+      IMAGE: ${{ needs.build.outputs.image }}
+      JOB: ${{ vars.CONTAINER_APP_JOB }}
+      RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+    steps:
+      # The job pulls without registry credentials, so the package must be public.
+      # Checked anonymously before touching the job: if this fails, the job keeps
+      # its current image instead of failing silently at the next scheduled run.
+      - name: Check the image is publicly pullable
+        run: |
+          if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "::error::Cannot pull $IMAGE anonymously. Make the GHCR package public (GitHub > Packages > Package settings > Change visibility), then re-run this job."
+            exit 1
+          fi
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Pinned like the actions above, so deploy behaviour changes only with this file.
+      - run: az extension add --name containerapp --version 0.3.55 --only-show-errors
+
+      # --no-wait: the CLI would otherwise poll a subscription-level operation-status
+      # endpoint that the deployer role (scoped to this job) cannot read. The job
+      # itself is polled instead, which the role allows.
+      - name: Update the Container Apps Job image
+        run: |
+          az containerapp job update \
+            --name "$JOB" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE" \
+            --no-wait \
+            --only-show-errors
+
+          for attempt in $(seq 1 30); do
+            state=$(az containerapp job show --name "$JOB" --resource-group "$RESOURCE_GROUP" \
+              --query "properties.provisioningState" --output tsv)
+            image=$(az containerapp job show --name "$JOB" --resource-group "$RESOURCE_GROUP" \
+              --query "properties.template.containers[0].image" --output tsv)
+            echo "Attempt $attempt: provisioningState=$state"
+            if [ "$state" = "Succeeded" ] && [ "$image" = "$IMAGE" ]; then
+              echo "Deployed $IMAGE"
+              exit 0
+            fi
+            if [ "$state" = "Failed" ]; then
+              echo "::error::Job update failed (provisioningState=Failed)."
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::Timed out waiting for the job update."
+          exit 1

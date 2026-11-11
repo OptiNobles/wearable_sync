@@ -27,3 +27,8 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.2.0",
 ]
+
+[tool.pytest.ini_options]
+# Every warning fails the tests, locally and in CI alike (e.g. a dependency's
+# deprecation warning is a signal to act); add a targeted filter only if needed.
+filterwarnings = ["error"]
