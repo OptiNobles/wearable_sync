@@ -1,0 +1,46 @@
+# Everything in this repository is pinned (action SHAs, base image digests, uv.lock),
+# so Dependabot keeps the pins current. Each update arrives as a pull request that
+# must pass the required 'test' and 'build' checks before it can be merged.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
+
+  # Python and uv base images in the Dockerfile (updates tags and pinned digests).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    ignore:
+      # Stay on Python 3.13 (new digests = security fixes still arrive). Moving to a
+      # new Python version is a deliberate change together with requires-python and
+      # .python-version, since CI tests run on 3.13.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    groups:
+      base-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "build"
+
+  # Python dependencies (pyproject.toml + uv.lock).
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      python-dependencies:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps"
