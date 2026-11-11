@@ -5,8 +5,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 
-from training_hub.core.interfaces import Sink, Source
-from training_hub.core.models import DataType
+from wearable_sync.core.interfaces import Sink, Source
+from wearable_sync.core.models import DataType
 
 logger = logging.getLogger(__name__)
 

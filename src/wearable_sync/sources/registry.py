@@ -3,10 +3,10 @@
 from collections.abc import Callable, Iterable
 from contextlib import ExitStack
 
-from training_hub.config import Settings
-from training_hub.core.interfaces import Source
-from training_hub.sources.polar.client import PolarClient
-from training_hub.sources.polar.source import PolarSource
+from wearable_sync.config import Settings
+from wearable_sync.core.interfaces import Source
+from wearable_sync.sources.polar.client import PolarClient
+from wearable_sync.sources.polar.source import PolarSource
 
 # A factory registers every resource it opens (e.g. HTTP clients) on the stack,
 # so the caller can close all of them at once.

@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from training_hub.core.interfaces import Sink
-from training_hub.core.models import DataType, RawRecord
-from training_hub.sinks.local import LocalFileSink
+from wearable_sync.core.interfaces import Sink
+from wearable_sync.core.models import DataType, RawRecord
+from wearable_sync.sinks.local import LocalFileSink
 
 
 def make_record(

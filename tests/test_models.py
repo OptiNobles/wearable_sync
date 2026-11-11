@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from training_hub.core.models import DataType, RawRecord
+from wearable_sync.core.models import DataType, RawRecord
 
 UNSAFE_IDENTIFIERS = ["../escape", "a/b", "a\\b", ".", "..", ".hidden", "", "08:02:32", "/abs"]
 

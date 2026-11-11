@@ -1,5 +1,5 @@
 [project]
-name = "training-hub"
+name = "wearable-sync"
 version = "0.1.0"
 description = "Syncs training and body data from wearable APIs to Databricks"
 readme = "README.md"
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-training-hub-sync = "training_hub.jobs.daily_sync:main"
+wearable-sync = "wearable_sync.jobs.daily_sync:main"
 
 [build-system]
 requires = ["uv_build>=0.11.3,<0.12.0"]

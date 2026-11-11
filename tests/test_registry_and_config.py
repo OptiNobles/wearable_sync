@@ -3,9 +3,9 @@ from contextlib import ExitStack
 import pytest
 from pydantic import ValidationError
 
-from training_hub.config import Settings
-from training_hub.sources.polar.source import PolarSource
-from training_hub.sources.registry import build_sources
+from wearable_sync.config import Settings
+from wearable_sync.sources.polar.source import PolarSource
+from wearable_sync.sources.registry import build_sources
 
 
 def make_settings(**overrides: object) -> Settings:

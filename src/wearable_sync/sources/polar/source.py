@@ -4,8 +4,8 @@ from collections.abc import Iterator
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from training_hub.core.models import DataType, RawRecord
-from training_hub.sources.polar.client import PolarClient
+from wearable_sync.core.models import DataType, RawRecord
+from wearable_sync.sources.polar.client import PolarClient
 
 SOURCE_NAME = "polar"
 

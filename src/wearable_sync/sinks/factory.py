@@ -3,10 +3,10 @@
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.config import Config
 
-from training_hub.config import Settings
-from training_hub.core.interfaces import Sink
-from training_hub.sinks.databricks_volume import DatabricksVolumeSink
-from training_hub.sinks.local import LocalFileSink
+from wearable_sync.config import Settings
+from wearable_sync.core.interfaces import Sink
+from wearable_sync.sinks.databricks_volume import DatabricksVolumeSink
+from wearable_sync.sinks.local import LocalFileSink
 
 # The sink only uploads files. The OAuth secret is restricted to this scope,
 # so the token request must ask for it explicitly (the SDK default is all-apis).

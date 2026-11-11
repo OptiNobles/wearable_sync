@@ -6,12 +6,12 @@ import pytest
 from databricks.sdk.errors import AlreadyExists, NotFound, PermissionDenied
 from pydantic import ValidationError
 
-from training_hub.config import Settings
-from training_hub.core.interfaces import Sink
-from training_hub.core.models import DataType, RawRecord
-from training_hub.sinks.databricks_volume import DatabricksVolumeSink
-from training_hub.sinks.factory import build_sink
-from training_hub.sinks.local import LocalFileSink
+from wearable_sync.config import Settings
+from wearable_sync.core.interfaces import Sink
+from wearable_sync.core.models import DataType, RawRecord
+from wearable_sync.sinks.databricks_volume import DatabricksVolumeSink
+from wearable_sync.sinks.factory import build_sink
+from wearable_sync.sinks.local import LocalFileSink
 
 
 class FakeFiles:
@@ -49,7 +49,7 @@ def make_record(
 
 
 def make_sink(files: FakeFiles) -> DatabricksVolumeSink:
-    return DatabricksVolumeSink(files, catalog="training_bronze", volume="files")
+    return DatabricksVolumeSink(files, catalog="wearable_sync_bronze", volume="files")
 
 
 def test_databricks_sink_fulfils_sink_contract() -> None:
@@ -64,7 +64,7 @@ def test_record_is_uploaded_to_source_schema_volume_path() -> None:
     make_sink(files).write([make_record()])
 
     assert list(files.stored) == [
-        "/Volumes/training_bronze/polar/files/exercise/2026-11-02/EXAMPLE_RUN_1.json"
+        "/Volumes/wearable_sync_bronze/polar/files/exercise/2026-11-02/EXAMPLE_RUN_1.json"
     ]
 
 
@@ -137,7 +137,7 @@ def test_other_errors_are_raised() -> None:
             raise PermissionDenied("no WRITE VOLUME")
 
     with pytest.raises(PermissionDenied):
-        DatabricksVolumeSink(DenyingFiles(), catalog="training_bronze", volume="files").write(
+        DatabricksVolumeSink(DenyingFiles(), catalog="wearable_sync_bronze", volume="files").write(
             [make_record()]
         )
 
@@ -182,7 +182,7 @@ def test_unknown_sink_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize("field", ["databricks_catalog", "databricks_volume"])
-@pytest.mark.parametrize("name", ["../escape", "training.bronze", "Training_Bronze", "my-volume"])
+@pytest.mark.parametrize("name", ["../escape", "wearable_sync.bronze", "Wearable_Sync_Bronze", "my-volume"])
 def test_invalid_catalog_or_volume_name_is_rejected(field: str, name: str) -> None:
     with pytest.raises(ValidationError):
         make_settings(**{field: name})

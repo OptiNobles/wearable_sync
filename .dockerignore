@@ -1,0 +1,25 @@
+# .dockerignore patterns are anchored to the build context root,
+# so "**/" is needed to match at any depth.
+
+# Secrets: never part of the image (passed at runtime instead)
+**/.env
+**/.env.*
+**/token.json
+
+# Local data (personal health data)
+**/data/
+
+# Local environment, VCS and tooling
+.venv/
+.git/
+.gitignore
+.dockerignore
+.python-version
+**/__pycache__/
+**/*.py[oc]
+.pytest_cache/
+.ruff_cache/
+
+# Not needed at runtime
+tests/
+Dockerfile

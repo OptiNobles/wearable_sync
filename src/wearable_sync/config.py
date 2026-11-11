@@ -6,8 +6,8 @@ from typing import Annotated, Any, Literal, Self
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-from training_hub.core.models import UnityCatalogName
-from training_hub.sources.polar.client import DEFAULT_BASE_URL as POLAR_DEFAULT_BASE_URL
+from wearable_sync.core.models import UnityCatalogName
+from wearable_sync.sources.polar.client import DEFAULT_BASE_URL as POLAR_DEFAULT_BASE_URL
 
 
 class Settings(BaseSettings):
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     databricks_client_id: str | None = None
     databricks_client_secret: SecretStr | None = None
     # Files land in /Volumes/{catalog}/{source}/{volume}/...
-    databricks_catalog: UnityCatalogName = "training_bronze"
+    databricks_catalog: UnityCatalogName = "wearable_sync_bronze"
     databricks_volume: UnityCatalogName = "files"
 
     # Polar: optional here; required only when the source is enabled (see registry).

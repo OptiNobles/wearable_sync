@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from training_hub.core.models import DataType, RawRecord
-from training_hub.jobs import daily_sync
+from wearable_sync.core.models import DataType, RawRecord
+from wearable_sync.jobs import daily_sync
 
 
 class FakeSource:

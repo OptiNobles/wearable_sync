@@ -3,8 +3,8 @@
 from collections.abc import Iterable
 from pathlib import Path
 
-from training_hub.core.models import RawRecord
-from training_hub.sinks.layout import record_path, serialize
+from wearable_sync.core.models import RawRecord
+from wearable_sync.sinks.layout import record_path, serialize
 
 
 class LocalFileSink:

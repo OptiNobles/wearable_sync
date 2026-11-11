@@ -7,9 +7,9 @@ import httpx
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from training_hub.core.models import DataType
-from training_hub.sources.polar.client import PolarClient
-from training_hub.sources.polar.source import PolarSource
+from wearable_sync.core.models import DataType
+from wearable_sync.sources.polar.client import PolarClient
+from wearable_sync.sources.polar.source import PolarSource
 
 FIXTURES = Path(__file__).parent / "fixtures" / "polar"
 

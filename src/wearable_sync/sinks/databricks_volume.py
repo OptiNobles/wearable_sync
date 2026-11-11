@@ -6,8 +6,8 @@ from typing import Any, BinaryIO, Protocol
 
 from databricks.sdk.errors import AlreadyExists, NotFound
 
-from training_hub.core.models import RawRecord
-from training_hub.sinks.layout import serialize, source_relative_path
+from wearable_sync.core.models import RawRecord
+from wearable_sync.sinks.layout import serialize, source_relative_path
 
 
 class VolumeFiles(Protocol):
@@ -23,7 +23,7 @@ class VolumeFiles(Protocol):
 class DatabricksVolumeSink:
     """Writes each record to /Volumes/{catalog}/{source}/{volume}/{data_type}/{date}/{id}.json
 
-    Each source has its own schema in the catalog (e.g. training_bronze.polar),
+    Each source has its own schema in the catalog (e.g. wearable_sync_bronze.polar),
     holding a volume with the same name for every source (e.g. files).
     """
 

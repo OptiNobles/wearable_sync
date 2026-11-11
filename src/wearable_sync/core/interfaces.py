@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from datetime import date
 from typing import Protocol
 
-from training_hub.core.models import DataType, RawRecord
+from wearable_sync.core.models import DataType, RawRecord
 
 
 class Source(Protocol):

@@ -1,6 +1,6 @@
 """Entrypoint for the scheduled sync job.
 
-Run with: uv run training-hub-sync  (or: python -m training_hub.jobs.daily_sync)
+Run with: uv run wearable-sync  (or: python -m wearable_sync.jobs.daily_sync)
 Exit code 0 means every (source, data type) pair synced; 1 means something failed.
 """
 
@@ -11,10 +11,10 @@ from datetime import date, timedelta
 
 import truststore
 
-from training_hub.config import Settings
-from training_hub.services.sync import sync
-from training_hub.sinks.factory import build_sink
-from training_hub.sources.registry import build_sources
+from wearable_sync.config import Settings
+from wearable_sync.services.sync import sync
+from wearable_sync.sinks.factory import build_sink
+from wearable_sync.sources.registry import build_sources
 
 logger = logging.getLogger(__name__)
 

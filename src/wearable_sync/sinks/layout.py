@@ -6,7 +6,7 @@ Path safety of source and record_id is guaranteed by RawRecord validation.
 from datetime import timezone
 from pathlib import PurePosixPath
 
-from training_hub.core.models import RawRecord
+from wearable_sync.core.models import RawRecord
 
 
 def record_path(record: RawRecord) -> PurePosixPath:

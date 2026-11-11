@@ -1,8 +1,8 @@
 from collections.abc import Iterable, Iterator
 from datetime import date, datetime, timezone
 
-from training_hub.core.models import DataType, RawRecord
-from training_hub.services.sync import SyncResult, sync
+from wearable_sync.core.models import DataType, RawRecord
+from wearable_sync.services.sync import SyncResult, sync
 
 SINCE = date(2026, 1, 1)
 
