@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import BinaryIO
@@ -142,39 +143,49 @@ def test_other_errors_are_raised() -> None:
         )
 
 
-def make_settings(**overrides: object) -> Settings:
-    return Settings(_env_file=None, **overrides)  # type: ignore[call-arg]
+MakeSettings = Callable[..., Settings]
 
 
-@pytest.fixture(autouse=True)
-def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in (
-        "SINK",
-        "DATABRICKS_HOST",
-        "DATABRICKS_CLIENT_ID",
-        "DATABRICKS_CLIENT_SECRET",
-        "DATABRICKS_CATALOG",
-        "DATABRICKS_VOLUME",
-    ):
-        monkeypatch.delenv(name, raising=False)
-
-
-def test_factory_builds_local_sink_by_default(tmp_path: Path) -> None:
+def test_factory_builds_local_sink_by_default(tmp_path: Path, make_settings: MakeSettings) -> None:
     sink = build_sink(make_settings(local_sink_root=tmp_path))
 
     assert isinstance(sink, LocalFileSink)
 
 
-def test_databricks_sink_settings_report_all_missing_credentials() -> None:
-    with pytest.raises(ValidationError, match="DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET"):
-        make_settings(sink="databricks", databricks_host="https://example.com")
+def test_databricks_sink_requires_host(make_settings: MakeSettings) -> None:
+    with pytest.raises(ValidationError, match="requires: DATABRICKS_HOST"):
+        make_settings(sink="databricks")
 
 
-def test_databricks_credentials_are_not_required_for_local_sink() -> None:
+def test_azure_cli_auth_is_the_default_and_needs_no_client_id(make_settings: MakeSettings) -> None:
+    settings = make_settings(sink="databricks", databricks_host="https://example.com")
+
+    assert settings.databricks_auth == "azure-cli"
+
+
+def test_managed_identity_auth_requires_client_id(make_settings: MakeSettings) -> None:
+    with pytest.raises(ValidationError, match="AZURE_CLIENT_ID"):
+        make_settings(
+            sink="databricks",
+            databricks_host="https://example.com",
+            databricks_auth="managed-identity",
+        )
+
+
+def test_unknown_auth_mode_is_rejected(make_settings: MakeSettings) -> None:
+    with pytest.raises(ValidationError):
+        make_settings(
+            sink="databricks", databricks_host="https://example.com", databricks_auth="pat"
+        )
+
+
+def test_databricks_settings_are_not_required_for_local_sink(make_settings: MakeSettings) -> None:
     assert make_settings(sink="local").databricks_host is None
 
 
-def test_unknown_sink_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unknown_sink_is_rejected(
+    monkeypatch: pytest.MonkeyPatch, make_settings: MakeSettings
+) -> None:
     monkeypatch.setenv("SINK", "s3")
 
     with pytest.raises(ValueError):
@@ -182,7 +193,11 @@ def test_unknown_sink_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize("field", ["databricks_catalog", "databricks_volume"])
-@pytest.mark.parametrize("name", ["../escape", "wearable_sync.bronze", "Wearable_Sync_Bronze", "my-volume"])
-def test_invalid_catalog_or_volume_name_is_rejected(field: str, name: str) -> None:
+@pytest.mark.parametrize(
+    "name", ["../escape", "wearable_sync.bronze", "Wearable_Sync_Bronze", "my-volume"]
+)
+def test_invalid_catalog_or_volume_name_is_rejected(
+    field: str, name: str, make_settings: MakeSettings
+) -> None:
     with pytest.raises(ValidationError):
         make_settings(**{field: name})

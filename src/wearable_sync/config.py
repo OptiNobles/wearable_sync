@@ -24,8 +24,11 @@ class Settings(BaseSettings):
 
     # Databricks: required only when SINK=databricks (checked below).
     databricks_host: str | None = None
-    databricks_client_id: str | None = None
-    databricks_client_secret: SecretStr | None = None
+    # Microsoft Entra ID authentication, no Databricks secrets:
+    #   azure-cli        - local development, the identity of `az login`
+    #   managed-identity - Azure (Container Apps), the user-assigned identity AZURE_CLIENT_ID
+    databricks_auth: Literal["azure-cli", "managed-identity"] = "azure-cli"
+    azure_client_id: str | None = None
     # Files land in /Volumes/{catalog}/{source}/{volume}/...
     databricks_catalog: UnityCatalogName = "wearable_sync_bronze"
     databricks_volume: UnityCatalogName = "files"
@@ -45,18 +48,16 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
-    def _require_databricks_credentials(self) -> Self:
+    def _require_databricks_settings(self) -> Self:
         if self.sink != "databricks":
             return self
-        missing = [
-            name
-            for name, value in (
-                ("DATABRICKS_HOST", self.databricks_host),
-                ("DATABRICKS_CLIENT_ID", self.databricks_client_id),
-                ("DATABRICKS_CLIENT_SECRET", self.databricks_client_secret),
-            )
-            if not value
-        ]
+        required = [("DATABRICKS_HOST", self.databricks_host)]
+        if self.databricks_auth == "managed-identity":
+            required.append(("AZURE_CLIENT_ID", self.azure_client_id))
+        missing = [name for name, value in required if not value]
         if missing:
-            raise ValueError(f"SINK=databricks requires: {', '.join(missing)}")
+            raise ValueError(
+                f"SINK=databricks with DATABRICKS_AUTH={self.databricks_auth} requires: "
+                f"{', '.join(missing)}"
+            )
         return self
