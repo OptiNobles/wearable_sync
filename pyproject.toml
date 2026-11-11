@@ -20,7 +20,7 @@ dependencies = [
 wearable-sync = "wearable_sync.jobs.daily_sync:main"
 
 [build-system]
-requires = ["uv_build>=0.11.3,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -31,7 +31,7 @@ dev = [
 [tool.uv]
 # Single source of truth for the uv version: CI (setup-uv reads it) and the Docker
 # build (the uv stage must provide this version) both follow it.
-required-version = "==0.11.3"
+required-version = "==0.13.7"
 
 [tool.pytest.ini_options]
 # Every warning fails the tests, locally and in CI alike (e.g. a dependency's
