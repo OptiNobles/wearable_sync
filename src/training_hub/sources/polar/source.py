@@ -17,15 +17,16 @@ class PolarSource:
     def __init__(self, client: PolarClient) -> None:
         self._client = client
 
-    def fetch(self, data_type: DataType, since: date) -> Iterator[RawRecord]:
-        # The API is called here, not lazily: HTTP errors surface at fetch(),
-        # and the returned records stay usable after the client is closed.
+    def fetch(self, data_type: DataType, since: date) -> list[RawRecord]:
+        # Everything happens here, eagerly: HTTP and validation errors surface
+        # at fetch(), before a sink writes anything, and the returned records
+        # stay usable after the client is closed.
         if data_type == DataType.EXERCISE:
             exercises = self._client.list_exercises(samples=True, zones=True, route=True)
-            return _exercise_records(exercises, since)
+            return list(_exercise_records(exercises, since))
         if data_type == DataType.BODY_MEASUREMENT:
             info = self._client.get_physical_info()
-            return _body_measurement_records(info, since)
+            return list(_body_measurement_records(info, since))
         raise ValueError(f"{SOURCE_NAME} does not support data type: {data_type}")
 
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import httpx
 import pytest
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from training_hub.core.models import DataType
 from training_hub.sources.polar.client import PolarClient
@@ -139,6 +139,18 @@ def test_http_error_is_raised_at_fetch(make_source: SourceFactory) -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         source.fetch(DataType.EXERCISE, since=date(2026, 1, 1))
+
+
+def test_invalid_record_fails_at_fetch_before_anything_is_returned(
+    make_source: SourceFactory,
+) -> None:
+    def api_with_bad_id(request: httpx.Request) -> httpx.Response:
+        exercises = load_fixture("exercises.json")
+        exercises[1]["id"] = "bad/id"  # type: ignore[index]
+        return httpx.Response(200, json=exercises)
+
+    with pytest.raises(ValidationError):
+        make_source(api_with_bad_id).fetch(DataType.EXERCISE, since=date(2026, 1, 1))
 
 
 @pytest.mark.parametrize("data_type", [DataType.EXERCISE, DataType.BODY_MEASUREMENT])
